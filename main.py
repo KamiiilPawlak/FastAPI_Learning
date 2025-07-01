@@ -1,21 +1,45 @@
 from fastapi import FastAPI, Query
 import numpy as np
 from datetime import datetime
+from typing import List, Union
 
 
-def log_operation(operation: str, num1: float, num2: float):
+
+def log_operation(operation: str, num1: float, num2: float = None):
     with open("log.txt", "a") as log:
         timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        log.write(f"{timestamp} | {operation} | {num1} | {num2}\n")
+        if num2 is not None:
+            log.write(f"{timestamp} | {operation} | {num1} | {num2}\n")
+        else:
+            log.write(f"{timestamp} | {operation} | {num1}\n")
 
 app = FastAPI()
 
 
 
 
+
+@app.get("/List")
+async def new_list(lista: List[Union[str, int]] = Query(default=None)):
+    if lista is None:
+        lista = []
+    return {"received_list": lista}
+
+
 @app.get("/")
 async def root():
     return {"message": "this is a calculator :DD"}
+
+
+
+
+@app.get("/extra")
+def get_full_name(first_name: str, last_name: str):
+    full_name = first_name.title() + " " + last_name.title()
+    return full_name
+
+
+
 
 @app.get("/add")
 async def add(num1: float, num2: float):
@@ -28,7 +52,6 @@ async def add(num1: float, num2: float):
 
 @app.get("/subtract")
 async def subtract(num1: float, num2: float):
-
     try:
         result = num1 - num2
         log_operation("subtract", num1, num2)
@@ -49,10 +72,10 @@ async def multiply(num1: float, num2: float):
 async def divide(num1: float, num2: float):
     try:
         if num2 == 0:
-            raise ValueError("divide by zero")
+            raise ValueError("Nie można dzielić przez zero")
         result = num1 / num2
         log_operation("divide", num1, num2)
-        return {"Operation": "multiply", "result": result}
+        return {"Operation": "divide", "result": result} # Poprawiona literówka
     except Exception as e:
         return {"Error": str(e)}
 
@@ -86,6 +109,8 @@ async def tan(num1: float):
 @app.get("/trigonometric_function/asin")
 async def asin(num1: float):
     try:
+        if not -1 <= num1 <= 1:
+            raise ValueError("Wartość dla asin musi być w zakresie [-1, 1]")
         result = np.arcsin(num1)
         log_operation("asin", num1)
         return {"operation": "asin", "result": result}
