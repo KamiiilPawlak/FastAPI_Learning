@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query
 import numpy as np
 from datetime import datetime
 from typing import List, Union
+from enum import Enum
 
 
 
@@ -13,27 +14,66 @@ def log_operation(operation: str, num1: float, num2: float = None):
         else:
             log.write(f"{timestamp} | {operation} | {num1}\n")
 
+
+
+
+
+
+class ModelName(str, Enum):
+    alexnet = "AlexNet"
+    resnet = "ResNet"
+    lennet = "Lenet"
+
+
+
+class MathConst(float, Enum):
+    PI = 3.1415926
+    e = 2.71828
+
+
+
+
 app = FastAPI()
 
+
+#czyli w przypadku zadeklarowania innych parametrow funkji. ktore nie sa czescia sciezki, sa one autoamtycznei interpetowane jako parametry zapytania
+fake_items_db = [{"item_name":"Foo"},{"item_name":"Bar"},{"item_name":"Baz"}]
+
+@app.get("/items/")
+async def read_items(skip: int =0, limit: int =10):
+    return fake_items_db[skip : skip + limit]
+
+
+
+
+@app.get("/models/{model_name}")
+async def get_model(model_name: ModelName):
+    if model_name is ModelName.alexnet:
+        return {"model_name": model_name, "message": "Deep learning model"}
+    if model_name.value == "Lenet":
+        return {"model_name": ModelName.lennet, "message": "Lenet model"}
 
 
 
 
 @app.get("/List")
 async def new_list(lista: List[Union[str, int]] = Query(default=None)):
+    #asynchronicznie
     if lista is None:
         lista = []
     return {"received_list": lista}
 
 
-@app.get("/")
-async def root():
-    return {"message": "this is a calculator :DD"}
+@app.get("/name/{name2}")  #decorator
+async def root(name2: str):
+    return {"message": name2}
 
 
 
 
 @app.get("/extra")
+
+# nie asynchronicznie
 def get_full_name(first_name: str, last_name: str):
     full_name = first_name.title() + " " + last_name.title()
     return full_name
